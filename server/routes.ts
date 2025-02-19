@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { Connection } from "@solana/web3.js";
+import { Connection, PublicKey } from "@solana/web3.js";
 import { loginSchema, contractAddressSchema, filterSchema } from "@shared/schema";
 import session from "express-session";
 import MemoryStore from "memorystore";
@@ -19,10 +19,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
     cookie: { secure: process.env.NODE_ENV === "production" }
   }));
 
+  // DEV ONLY: Create a test access code
+  app.post("/api/dev/create-access-code", async (req, res) => {
+    try {
+      const accessCode = await storage.createAccessCode({
+        code: "TEST123"
+      });
+      res.json({ accessCode });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to create access code" });
+    }
+  });
+
   app.post("/api/login", async (req, res) => {
     try {
       const { accessCode, deviceFingerprint } = loginSchema.parse(req.body);
-      
+
       const existingCode = await storage.getAccessCode(accessCode);
       if (!existingCode || !existingCode.isActive) {
         return res.status(401).json({ message: "Invalid access code" });
@@ -54,7 +66,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Fetch recent transactions for the contract
       const signatures = await solana.getSignaturesForAddress(
-        address,
+        new PublicKey(address),
         { limit: 1000 }
       );
 
