@@ -11,13 +11,13 @@ export interface IStorage {
   // Access code methods
   getAccessCode(code: string): Promise<AccessCode | undefined>;
   createAccessCode(code: InsertAccessCode): Promise<AccessCode>;
-  
+
   // Session methods
   getSession(deviceFingerprint: string): Promise<Session | undefined>;
   createSession(session: InsertSession): Promise<Session>;
   updateSessionActivity(id: number): Promise<void>;
   invalidateOtherSessions(accessCodeId: number, currentSessionId: number): Promise<void>;
-  
+
   // Transaction methods
   getTransactions(
     contractAddress: string,
@@ -49,20 +49,24 @@ export class MemStorage implements IStorage {
       sessions: 1,
       transactions: 1,
     };
+
+    // Initialize with a test access code
+    this.createAccessCode({ code: "TEST123" });
   }
 
   async getAccessCode(code: string): Promise<AccessCode | undefined> {
-    // Fix case sensitivity and trim whitespace
     const normalizedCode = code.trim().toUpperCase();
-    return Array.from(this.accessCodes.values()).find(ac => 
-      ac.code.trim().toUpperCase() === normalizedCode
-    );
+    const codes = Array.from(this.accessCodes.values());
+    console.log("Available access codes:", codes);
+    return codes.find(ac => ac.code.trim().toUpperCase() === normalizedCode);
   }
 
   async createAccessCode(code: InsertAccessCode): Promise<AccessCode> {
     const id = this.currentId.accessCodes++;
     const accessCode: AccessCode = { ...code, id, isActive: true };
     this.accessCodes.set(id, accessCode);
+    console.log("Created new access code:", accessCode);
+    console.log("Current access codes:", Array.from(this.accessCodes.values()));
     return accessCode;
   }
 

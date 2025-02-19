@@ -34,7 +34,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Improve login endpoint error handling
+  // Update the login route to improve error handling and logging
   app.post("/api/login", async (req, res) => {
     try {
       console.log("Login attempt with body:", req.body);
@@ -44,10 +44,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log("Found access code:", existingCode);
 
       if (!existingCode) {
+        console.log("Access code not found for:", accessCode);
         return res.status(401).json({ message: "Access code not found" });
       }
 
       if (!existingCode.isActive) {
+        console.log("Access code is inactive:", accessCode);
         return res.status(401).json({ message: "Access code is inactive" });
       }
 
