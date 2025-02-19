@@ -47,8 +47,8 @@ export type InsertSession = z.infer<typeof insertSessionSchema>;
 export type InsertWalletTransaction = z.infer<typeof insertWalletTransactionSchema>;
 
 export const loginSchema = z.object({
-  accessCode: z.string().min(1),
-  deviceFingerprint: z.string().min(1),
+  accessCode: z.string().min(1, "Access code is required"),
+  deviceFingerprint: z.string().min(1, "Device fingerprint is required"),
 });
 
 export const contractAddressSchema = z.object({

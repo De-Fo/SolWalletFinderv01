@@ -11,16 +11,19 @@ import { useMutation } from "@tanstack/react-query";
 import FingerprintJS from '@fingerprintjs/fingerprintjs';
 import { apiRequest } from "@/lib/queryClient";
 
+interface LoginFormData {
+  accessCode: string;
+}
+
 export default function Login() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
 
-  const form = useForm({
-    resolver: zodResolver(loginSchema),
+  const form = useForm<LoginFormData>({
+    resolver: zodResolver(loginSchema.omit({ deviceFingerprint: true })),
     defaultValues: {
-      accessCode: "",
-      deviceFingerprint: ""
+      accessCode: ""
     }
   });
 
@@ -50,10 +53,12 @@ export default function Login() {
     }
   });
 
-  const onSubmit = async (values: { accessCode: string }) => {
+  const onSubmit = async (values: LoginFormData) => {
+    if (loading) return;
+
     try {
       setLoading(true);
-      console.log("Starting login process...");
+      console.log("Starting login process with values:", values);
 
       const fp = await FingerprintJS.load();
       const { visitorId } = await fp.get();
