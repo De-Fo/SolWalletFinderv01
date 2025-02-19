@@ -10,7 +10,9 @@ import { isValidSolanaAddress } from "@/lib/web3";
 import { Maximize2 } from "lucide-react";
 
 export default function Dashboard() {
-  const [contractAddress, setContractAddress] = useState<string>("");
+  const [contractAddress, setContractAddress] = useState<string>(() => {
+    return localStorage.getItem("lastContractAddress") || "";
+  });
   const [isWalletListExpanded, setIsWalletListExpanded] = useState(false);
   const { toast } = useToast();
   const [selectedTimeRange, setSelectedTimeRange] = useState<[Date, Date]>([
@@ -32,7 +34,6 @@ export default function Dashboard() {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newValue = e.target.value;
-    console.log('Input changed to:', newValue); // Debug log
     setContractAddress(newValue);
   };
 
