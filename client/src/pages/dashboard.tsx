@@ -16,6 +16,11 @@ export default function Dashboard() {
     new Date()
   ]);
 
+  const handleAddressChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value.trim();
+    setContractAddress(value);
+  };
+
   const handleSearch = () => {
     if (!isValidSolanaAddress(contractAddress)) {
       toast({
@@ -37,8 +42,13 @@ export default function Dashboard() {
               <Input
                 placeholder="Enter contract address"
                 value={contractAddress}
-                onChange={(e) => setContractAddress(e.target.value)}
-                className="flex-1"
+                onChange={handleAddressChange}
+                onPaste={(e) => {
+                  e.preventDefault();
+                  const pastedText = e.clipboardData.getData('text').trim();
+                  setContractAddress(pastedText);
+                }}
+                className="flex-1 font-mono"
               />
               <Button onClick={handleSearch}>Search</Button>
             </div>
@@ -53,7 +63,7 @@ export default function Dashboard() {
                   console.log("Filters changed:", filters);
                 }}
               />
-              
+
               <div className="space-y-6">
                 <Card>
                   <CardContent className="pt-6">
