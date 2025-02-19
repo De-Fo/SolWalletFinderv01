@@ -13,20 +13,20 @@ export function ChartView({
   timeRange,
 }: ChartViewProps) {
   const chartContainerRef = useRef<HTMLDivElement>(null);
-  const chartRef = useRef<ReturnType<typeof createChart> | null>(null);
+  const chart = useRef<any>(null);
 
   useEffect(() => {
     if (!chartContainerRef.current) return;
 
     const handleResize = () => {
-      if (chartContainerRef.current && chartRef.current) {
-        chartRef.current.applyOptions({ 
+      if (chartContainerRef.current && chart.current) {
+        chart.current.applyOptions({ 
           width: chartContainerRef.current.clientWidth 
         });
       }
     };
 
-    chartRef.current = createChart(chartContainerRef.current, {
+    chart.current = createChart(chartContainerRef.current, {
       layout: {
         background: { 
           type: 'solid', 
@@ -42,10 +42,10 @@ export function ChartView({
       },
     });
 
-    const series = chartRef.current.addAreaSeries({
-      lineColor: '#2962FF',
-      topColor: '#2962FF',
-      bottomColor: 'rgba(41, 98, 255, 0.28)',
+    const lineSeries = chart.current.addLineSeries({
+      color: '#2962FF',
+      lineWidth: 2,
+      priceLineVisible: false,
     });
 
     const fetchData = async () => {
@@ -56,7 +56,7 @@ export function ChartView({
         const response = await fetch(`/api/price-history/${contractAddress}?start=${startTime}&end=${endTime}`);
         const data = await response.json();
 
-        series.setData(data.map((item: any) => ({
+        lineSeries.setData(data.map((item: any) => ({
           time: item.time,
           value: parseFloat(item.value)
         })));
@@ -70,8 +70,8 @@ export function ChartView({
 
     return () => {
       window.removeEventListener('resize', handleResize);
-      if (chartRef.current) {
-        chartRef.current.remove();
+      if (chart.current) {
+        chart.current.remove();
       }
     };
   }, [contractAddress]);
