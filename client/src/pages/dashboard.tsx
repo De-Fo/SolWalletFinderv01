@@ -13,6 +13,7 @@ export default function Dashboard() {
   const [contractAddress, setContractAddress] = useState<string>(() => {
     return localStorage.getItem("lastContractAddress") || "";
   });
+  const [activeSearch, setActiveSearch] = useState(false);
   const [isWalletListExpanded, setIsWalletListExpanded] = useState(false);
   const { toast } = useToast();
   const [selectedTimeRange, setSelectedTimeRange] = useState<[Date, Date]>([
@@ -29,7 +30,7 @@ export default function Dashboard() {
       });
       return;
     }
-    // Trigger data fetching
+    setActiveSearch(true);
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -38,16 +39,17 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-background p-6">
-      <div className="max-w-[1800px] mx-auto space-y-6">
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex gap-4">
+    <div className="min-h-screen bg-background">
+      <div className="border-b">
+        <div className="max-w-[1800px] mx-auto px-4 py-2">
+          <div className="flex gap-4 items-center">
+            {activeSearch && <h2 className="text-sm font-mono text-muted-foreground">{contractAddress}</h2>}
+            <div className={`flex gap-4 ${activeSearch ? 'w-64 ml-auto' : 'w-full'}`}>
               <Input
                 placeholder="Enter contract address"
                 value={contractAddress}
                 onChange={handleInputChange}
-                className="flex-1 font-mono"
+                className="font-mono"
               />
               <Button 
                 onClick={handleAddressSubmit}
@@ -56,8 +58,10 @@ export default function Dashboard() {
                 Search
               </Button>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
+      </div>
+      <div className="max-w-[1800px] mx-auto p-6 space-y-6">
 
         {contractAddress && (
           <div className="grid gap-6" style={{ 
