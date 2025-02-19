@@ -1,6 +1,6 @@
 
 import { useEffect, useRef } from 'react';
-import { createChart } from 'lightweight-charts';
+import { IChartApi, createChart, ColorType } from 'lightweight-charts';
 import { CryptoCompareAPI } from '@cryptocompare/cg-api-ts';
 
 interface ChartViewProps {
@@ -14,25 +14,37 @@ export function ChartView({
   timeRange,
 }: ChartViewProps) {
   const chartContainerRef = useRef<HTMLDivElement>(null);
+  const chartRef = useRef<IChartApi | null>(null);
   const api = new CryptoCompareAPI();
 
   useEffect(() => {
     if (!chartContainerRef.current) return;
 
-    const chart = createChart(chartContainerRef.current, {
-      width: chartContainerRef.current.clientWidth,
-      height: 400,
+    const handleResize = () => {
+      if (chartContainerRef.current && chartRef.current) {
+        chartRef.current.applyOptions({ 
+          width: chartContainerRef.current.clientWidth 
+        });
+      }
+    };
+
+    chartRef.current = createChart(chartContainerRef.current, {
       layout: {
-        background: { color: '#1a1a1a' },
+        background: { type: ColorType.Solid, color: '#1a1a1a' },
         textColor: '#d1d5db',
       },
+      width: chartContainerRef.current.clientWidth,
+      height: 400,
       grid: {
         vertLines: { color: '#2c2c2c' },
         horzLines: { color: '#2c2c2c' },
       },
     });
 
-    const candlestickSeries = chart.addCandlestickSeries();
+    const lineSeries = chartRef.current.addLineSeries({
+      color: '#2962FF',
+      lineWidth: 2,
+    });
 
     const fetchData = async () => {
       try {
@@ -47,33 +59,23 @@ export function ChartView({
 
         const chartData = response.map((item: any) => ({
           time: item.time,
-          open: item.open,
-          high: item.high,
-          low: item.low,
-          close: item.close,
+          value: item.close,
         }));
 
-        candlestickSeries.setData(chartData);
+        lineSeries.setData(chartData);
       } catch (error) {
         console.error('Error fetching chart data:', error);
       }
     };
 
     fetchData();
-
-    const handleResize = () => {
-      if (chartContainerRef.current) {
-        chart.applyOptions({ 
-          width: chartContainerRef.current.clientWidth 
-        });
-      }
-    };
-
     window.addEventListener('resize', handleResize);
 
     return () => {
-      chart.remove();
       window.removeEventListener('resize', handleResize);
+      if (chartRef.current) {
+        chartRef.current.remove();
+      }
     };
   }, [contractAddress]);
 
