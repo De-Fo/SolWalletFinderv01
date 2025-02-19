@@ -1,6 +1,7 @@
-import { useEffect } from 'react';
-import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
-import { Card } from './ui/card';
+
+import { useEffect, useRef } from 'react';
+import { createChart } from 'lightweight-charts';
+import { CryptoCompareAPI } from '@cryptocompare/cg-api-ts';
 
 interface ChartViewProps {
   contractAddress: string;
@@ -11,40 +12,72 @@ interface ChartViewProps {
 export function ChartView({
   contractAddress,
   timeRange,
-  onTimeRangeChange
 }: ChartViewProps) {
-  // Sample data - replace with real data fetch
-  const data = [
-    { time: '2024-01-01', value: 10 },
-    { time: '2024-01-02', value: 11 },
-    { time: '2024-01-03', value: 14 },
-    { time: '2024-01-04', value: 12 },
-    { time: '2024-01-05', value: 15 },
-  ];
+  const chartContainerRef = useRef<HTMLDivElement>(null);
+  const api = new CryptoCompareAPI();
+
+  useEffect(() => {
+    if (!chartContainerRef.current) return;
+
+    const chart = createChart(chartContainerRef.current, {
+      width: chartContainerRef.current.clientWidth,
+      height: 400,
+      layout: {
+        background: { color: '#1a1a1a' },
+        textColor: '#d1d5db',
+      },
+      grid: {
+        vertLines: { color: '#2c2c2c' },
+        horzLines: { color: '#2c2c2c' },
+      },
+    });
+
+    const candlestickSeries = chart.addCandlestickSeries();
+
+    const fetchData = async () => {
+      try {
+        const endTime = Math.floor(Date.now() / 1000);
+        const startTime = endTime - 7 * 24 * 60 * 60; // 7 days of data
+
+        const response = await api.getOHLCV(contractAddress, 'usd', {
+          after: startTime,
+          before: endTime,
+          precision: '1h'
+        });
+
+        const chartData = response.map((item: any) => ({
+          time: item.time,
+          open: item.open,
+          high: item.high,
+          low: item.low,
+          close: item.close,
+        }));
+
+        candlestickSeries.setData(chartData);
+      } catch (error) {
+        console.error('Error fetching chart data:', error);
+      }
+    };
+
+    fetchData();
+
+    const handleResize = () => {
+      if (chartContainerRef.current) {
+        chart.applyOptions({ 
+          width: chartContainerRef.current.clientWidth 
+        });
+      }
+    };
+
+    window.addEventListener('resize', handleResize);
+
+    return () => {
+      chart.remove();
+      window.removeEventListener('resize', handleResize);
+    };
+  }, [contractAddress]);
 
   return (
-    <div style={{ width: '100%', height: 400 }}>
-      <ResponsiveContainer>
-        <AreaChart data={data}>
-          <defs>
-            <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%" stopColor="#22c55e" stopOpacity={0.3}/>
-              <stop offset="95%" stopColor="#22c55e" stopOpacity={0}/>
-            </linearGradient>
-          </defs>
-          <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-          <XAxis dataKey="time" stroke="#d1d5db" />
-          <YAxis stroke="#d1d5db" />
-          <Tooltip />
-          <Area 
-            type="monotone" 
-            dataKey="value" 
-            stroke="#22c55e" 
-            fillOpacity={1}
-            fill="url(#colorValue)" 
-          />
-        </AreaChart>
-      </ResponsiveContainer>
-    </div>
+    <div className="w-full h-[400px]" ref={chartContainerRef} />
   );
 }
