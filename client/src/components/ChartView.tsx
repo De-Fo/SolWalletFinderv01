@@ -1,5 +1,6 @@
+
 import { useEffect, useRef } from 'react';
-import { createChart, IChartApi } from 'lightweight-charts';
+import { createChart, ColorType, IChartApi } from 'lightweight-charts';
 
 interface ChartViewProps {
   contractAddress: string;
@@ -18,9 +19,17 @@ export function ChartView({
   useEffect(() => {
     if (!chartContainerRef.current) return;
 
-    const chart = createChart(chartContainerRef.current, {
+    const handleResize = () => {
+      if (chartContainerRef.current && chartRef.current) {
+        chartRef.current.applyOptions({
+          width: chartContainerRef.current.clientWidth
+        });
+      }
+    };
+
+    chartRef.current = createChart(chartContainerRef.current, {
       layout: {
-        background: { type: 'solid', color: 'transparent' },
+        background: { type: ColorType.Solid, color: 'transparent' },
         textColor: '#d1d5db',
       },
       grid: {
@@ -31,8 +40,10 @@ export function ChartView({
       height: 400,
     });
 
-    const lineSeries = chart.addLineSeries({
-      color: '#22c55e',
+    const areaSeries = chartRef.current.addAreaSeries({
+      lineColor: '#22c55e',
+      topColor: '#22c55e50',
+      bottomColor: '#22c55e10',
       lineWidth: 2,
     });
 
@@ -45,23 +56,16 @@ export function ChartView({
       { time: '2024-01-05', value: 15 },
     ];
 
-    lineSeries.setData(data);
-    chart.timeScale().fitContent();
-    chartRef.current = chart;
-
-    const handleResize = () => {
-      if (chartContainerRef.current) {
-        chart.applyOptions({
-          width: chartContainerRef.current.clientWidth
-        });
-      }
-    };
+    areaSeries.setData(data);
+    chartRef.current.timeScale().fitContent();
 
     window.addEventListener('resize', handleResize);
 
     return () => {
       window.removeEventListener('resize', handleResize);
-      chart.remove();
+      if (chartRef.current) {
+        chartRef.current.remove();
+      }
     };
   }, [contractAddress]);
 
