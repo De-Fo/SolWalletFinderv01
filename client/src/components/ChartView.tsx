@@ -1,6 +1,6 @@
 
 import { useEffect, useRef } from 'react';
-import { createChart } from 'lightweight-charts';
+import { createChart, IChartApi } from 'lightweight-charts';
 
 interface ChartViewProps {
   contractAddress: string;
@@ -13,20 +13,12 @@ export function ChartView({
   timeRange,
 }: ChartViewProps) {
   const chartContainerRef = useRef<HTMLDivElement>(null);
-  const chart = useRef<any>(null);
+  const chart = useRef<IChartApi | null>(null);
 
   useEffect(() => {
     if (!chartContainerRef.current) return;
 
-    const handleResize = () => {
-      if (chartContainerRef.current && chart.current) {
-        chart.current.applyOptions({ 
-          width: chartContainerRef.current.clientWidth 
-        });
-      }
-    };
-
-    chart.current = createChart(chartContainerRef.current, {
+    const chartOptions = {
       layout: {
         background: { 
           type: 'solid', 
@@ -40,13 +32,28 @@ export function ChartView({
         vertLines: { color: '#2c2c2c' },
         horzLines: { color: '#2c2c2c' },
       },
-    });
+      timeScale: {
+        timeVisible: true,
+        secondsVisible: false,
+      },
+    };
 
-    const lineSeries = chart.current.addLineSeries({
-      color: '#2962FF',
+    chart.current = createChart(chartContainerRef.current, chartOptions);
+    const newSeries = chart.current.addAreaSeries({
+      lineColor: '#2962FF',
+      topColor: '#2962FF',
+      bottomColor: 'rgba(41, 98, 255, 0.28)',
       lineWidth: 2,
       priceLineVisible: false,
     });
+
+    const handleResize = () => {
+      if (chartContainerRef.current && chart.current) {
+        chart.current.applyOptions({ 
+          width: chartContainerRef.current.clientWidth 
+        });
+      }
+    };
 
     const fetchData = async () => {
       try {
@@ -56,7 +63,7 @@ export function ChartView({
         const response = await fetch(`/api/price-history/${contractAddress}?start=${startTime}&end=${endTime}`);
         const data = await response.json();
 
-        lineSeries.setData(data.map((item: any) => ({
+        newSeries.setData(data.map((item: any) => ({
           time: item.time,
           value: parseFloat(item.value)
         })));
