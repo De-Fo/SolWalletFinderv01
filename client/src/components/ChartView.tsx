@@ -1,7 +1,6 @@
 
 import { useEffect, useRef } from 'react';
-import { IChartApi, createChart, ColorType } from 'lightweight-charts';
-import { CryptoCompareAPI } from '@cryptocompare/cg-api-ts';
+import { createChart } from 'lightweight-charts';
 
 interface ChartViewProps {
   contractAddress: string;
@@ -14,8 +13,7 @@ export function ChartView({
   timeRange,
 }: ChartViewProps) {
   const chartContainerRef = useRef<HTMLDivElement>(null);
-  const chartRef = useRef<IChartApi | null>(null);
-  const api = new CryptoCompareAPI();
+  const chartRef = useRef<ReturnType<typeof createChart> | null>(null);
 
   useEffect(() => {
     if (!chartContainerRef.current) return;
@@ -30,7 +28,10 @@ export function ChartView({
 
     chartRef.current = createChart(chartContainerRef.current, {
       layout: {
-        background: { type: ColorType.Solid, color: '#1a1a1a' },
+        background: { 
+          type: 'solid', 
+          color: '#1a1a1a' 
+        },
         textColor: '#d1d5db',
       },
       width: chartContainerRef.current.clientWidth,
@@ -41,28 +42,24 @@ export function ChartView({
       },
     });
 
-    const lineSeries = chartRef.current.addLineSeries({
-      color: '#2962FF',
-      lineWidth: 2,
+    const series = chartRef.current.addAreaSeries({
+      lineColor: '#2962FF',
+      topColor: '#2962FF',
+      bottomColor: 'rgba(41, 98, 255, 0.28)',
     });
 
     const fetchData = async () => {
       try {
         const endTime = Math.floor(Date.now() / 1000);
-        const startTime = endTime - 7 * 24 * 60 * 60; // 7 days of data
+        const startTime = endTime - 7 * 24 * 60 * 60; // 7 days
 
-        const response = await api.getOHLCV(contractAddress, 'usd', {
-          after: startTime,
-          before: endTime,
-          precision: '1h'
-        });
+        const response = await fetch(`/api/price-history/${contractAddress}?start=${startTime}&end=${endTime}`);
+        const data = await response.json();
 
-        const chartData = response.map((item: any) => ({
+        series.setData(data.map((item: any) => ({
           time: item.time,
-          value: item.close,
-        }));
-
-        lineSeries.setData(chartData);
+          value: parseFloat(item.value)
+        })));
       } catch (error) {
         console.error('Error fetching chart data:', error);
       }
