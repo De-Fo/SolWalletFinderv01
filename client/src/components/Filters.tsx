@@ -27,8 +27,13 @@ export function Filters({ onFiltersChange }: FiltersProps) {
       valueMin: "",
       valueMax: "",
       maxTransactionsPerMinute: 60
-    }
+    },
+    mode: "onChange"
   });
+
+  const onSubmit = (values: any) => {
+    onFiltersChange(values);
+  };
 
   const onSubmit = (values: any) => {
     onFiltersChange(values);
