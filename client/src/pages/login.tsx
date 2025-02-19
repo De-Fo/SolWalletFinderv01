@@ -84,7 +84,7 @@ export default function Login() {
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <Card className="w-full max-w-md">
         <CardHeader>
-          <h1 className="text-2xl font-bold text-center">Solana Wallet Tracker</h1>
+          <h1 className="text-2xl font-bold text-center">Solana Wallet Finder</h1>
           <p className="text-muted-foreground text-center mt-2">
             Enter your access code to continue
           </p>

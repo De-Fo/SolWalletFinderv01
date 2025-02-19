@@ -52,7 +52,11 @@ export class MemStorage implements IStorage {
   }
 
   async getAccessCode(code: string): Promise<AccessCode | undefined> {
-    return Array.from(this.accessCodes.values()).find(ac => ac.code === code);
+    // Fix case sensitivity and trim whitespace
+    const normalizedCode = code.trim().toUpperCase();
+    return Array.from(this.accessCodes.values()).find(ac => 
+      ac.code.trim().toUpperCase() === normalizedCode
+    );
   }
 
   async createAccessCode(code: InsertAccessCode): Promise<AccessCode> {
