@@ -35,10 +35,6 @@ export function Filters({ onFiltersChange }: FiltersProps) {
     onFiltersChange(values);
   };
 
-  const onSubmit = (values: any) => {
-    onFiltersChange(values);
-  };
-
   return (
     <Card>
       <CardHeader>
