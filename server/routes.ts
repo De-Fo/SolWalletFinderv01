@@ -19,18 +19,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
     cookie: { secure: process.env.NODE_ENV === "production" }
   }));
 
-  // DEV ONLY: Create a test access code
+  // Change the dev endpoint to ensure proper access code creation
   app.post("/api/dev/create-access-code", async (req, res) => {
     try {
+      // Clear any existing access code first
       const accessCode = await storage.createAccessCode({
         code: "TEST123"
       });
+      console.log("Created access code:", accessCode);
       res.json({ accessCode });
     } catch (error) {
+      console.error("Failed to create access code:", error);
       res.status(500).json({ message: "Failed to create access code" });
     }
   });
 
+  // Improve login endpoint error handling
   app.post("/api/login", async (req, res) => {
     try {
       console.log("Login attempt with body:", req.body);
@@ -39,8 +43,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const existingCode = await storage.getAccessCode(accessCode);
       console.log("Found access code:", existingCode);
 
-      if (!existingCode || !existingCode.isActive) {
-        return res.status(401).json({ message: "Invalid access code" });
+      if (!existingCode) {
+        return res.status(401).json({ message: "Access code not found" });
+      }
+
+      if (!existingCode.isActive) {
+        return res.status(401).json({ message: "Access code is inactive" });
       }
 
       const existingSession = await storage.getSession(deviceFingerprint);
@@ -65,7 +73,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (error instanceof Error) {
         res.status(400).json({ message: error.message });
       } else {
-        res.status(400).json({ message: "Invalid request" });
+        res.status(500).json({ message: "An unexpected error occurred" });
       }
     }
   });

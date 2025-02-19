@@ -29,11 +29,8 @@ export default function Login() {
 
   const loginMutation = useMutation({
     mutationFn: async (data: { accessCode: string, deviceFingerprint: string }) => {
-      console.log("Attempting login with:", data);
       const res = await apiRequest("POST", "/api/login", data);
-      const result = await res.json();
-      console.log("Login response:", result);
-      return result;
+      return await res.json();
     },
     onSuccess: () => {
       toast({
@@ -42,11 +39,23 @@ export default function Login() {
       });
       setLocation("/dashboard");
     },
-    onError: (error: Error) => {
+    onError: async (error: any) => {
       console.error("Login error:", error);
+      let errorMessage = "Failed to log in. Please try again.";
+
+      // Try to get the error message from the response
+      if (error.message) {
+        try {
+          const response = JSON.parse(error.message.split(': ')[1]);
+          errorMessage = response.message || errorMessage;
+        } catch {
+          errorMessage = error.message;
+        }
+      }
+
       toast({
         title: "Error",
-        description: error.message,
+        description: errorMessage,
         variant: "destructive"
       });
       setLoading(false);
@@ -58,23 +67,16 @@ export default function Login() {
 
     try {
       setLoading(true);
-      console.log("Starting login process with values:", values);
 
       const fp = await FingerprintJS.load();
       const { visitorId } = await fp.get();
-      console.log("Got device fingerprint:", visitorId);
 
       await loginMutation.mutateAsync({
         accessCode: values.accessCode,
         deviceFingerprint: visitorId
       });
     } catch (error) {
-      console.error("Login error:", error);
-      toast({
-        title: "Error",
-        description: "Failed to log in. Please try again.",
-        variant: "destructive"
-      });
+      console.error("Login submission error:", error);
     } finally {
       setLoading(false);
     }
@@ -107,9 +109,9 @@ export default function Login() {
             <Button
               type="submit"
               className="w-full"
-              disabled={loading}
+              disabled={loading || loginMutation.isPending}
             >
-              {loading ? "Logging in..." : "Login"}
+              {loading || loginMutation.isPending ? "Logging in..." : "Login"}
             </Button>
           </form>
         </CardContent>
