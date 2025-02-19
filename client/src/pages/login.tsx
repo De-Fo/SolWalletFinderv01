@@ -26,33 +26,50 @@ export default function Login() {
 
   const loginMutation = useMutation({
     mutationFn: async (data: { accessCode: string, deviceFingerprint: string }) => {
+      console.log("Attempting login with:", data);
       const res = await apiRequest("POST", "/api/login", data);
-      return res.json();
+      const result = await res.json();
+      console.log("Login response:", result);
+      return result;
     },
     onSuccess: () => {
+      toast({
+        title: "Success",
+        description: "Logged in successfully",
+      });
       setLocation("/dashboard");
     },
-    onError: (error) => {
+    onError: (error: Error) => {
+      console.error("Login error:", error);
       toast({
         title: "Error",
         description: error.message,
         variant: "destructive"
       });
+      setLoading(false);
     }
   });
 
   const onSubmit = async (values: { accessCode: string }) => {
-    setLoading(true);
     try {
+      setLoading(true);
+      console.log("Starting login process...");
+
       const fp = await FingerprintJS.load();
       const { visitorId } = await fp.get();
-      
+      console.log("Got device fingerprint:", visitorId);
+
       await loginMutation.mutateAsync({
         accessCode: values.accessCode,
         deviceFingerprint: visitorId
       });
     } catch (error) {
       console.error("Login error:", error);
+      toast({
+        title: "Error",
+        description: "Failed to log in. Please try again.",
+        variant: "destructive"
+      });
     } finally {
       setLoading(false);
     }
@@ -63,6 +80,9 @@ export default function Login() {
       <Card className="w-full max-w-md">
         <CardHeader>
           <h1 className="text-2xl font-bold text-center">Solana Wallet Tracker</h1>
+          <p className="text-muted-foreground text-center mt-2">
+            Enter your access code to continue
+          </p>
         </CardHeader>
         <CardContent>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
@@ -71,6 +91,7 @@ export default function Login() {
                 type="text"
                 placeholder="Enter your access code"
                 {...form.register("accessCode")}
+                disabled={loading}
               />
               {form.formState.errors.accessCode && (
                 <p className="text-sm text-destructive">

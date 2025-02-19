@@ -33,14 +33,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/login", async (req, res) => {
     try {
+      console.log("Login attempt with body:", req.body);
       const { accessCode, deviceFingerprint } = loginSchema.parse(req.body);
 
       const existingCode = await storage.getAccessCode(accessCode);
+      console.log("Found access code:", existingCode);
+
       if (!existingCode || !existingCode.isActive) {
         return res.status(401).json({ message: "Invalid access code" });
       }
 
       const existingSession = await storage.getSession(deviceFingerprint);
+      console.log("Existing session:", existingSession);
+
       if (existingSession) {
         await storage.updateSessionActivity(existingSession.id);
         return res.json({ message: "Session updated" });
@@ -50,12 +55,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         accessCodeId: existingCode.id,
         deviceFingerprint
       });
+      console.log("Created new session:", session);
 
       await storage.invalidateOtherSessions(existingCode.id, session.id);
 
       res.json({ message: "Logged in successfully" });
     } catch (error) {
-      res.status(400).json({ message: "Invalid request" });
+      console.error("Login error:", error);
+      if (error instanceof Error) {
+        res.status(400).json({ message: error.message });
+      } else {
+        res.status(400).json({ message: "Invalid request" });
+      }
     }
   });
 
@@ -78,7 +89,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       res.json({ transactions });
     } catch (error) {
-      res.status(400).json({ message: "Invalid request" });
+      console.error("Transaction error:", error);
+      if (error instanceof Error) {
+        res.status(400).json({ message: error.message });
+      } else {
+        res.status(400).json({ message: "Invalid request" });
+      }
     }
   });
 
