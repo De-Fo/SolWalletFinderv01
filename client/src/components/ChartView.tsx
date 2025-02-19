@@ -1,6 +1,6 @@
 
 import { useEffect, useRef } from 'react';
-import { createChart, IChartApi } from 'lightweight-charts';
+import { createChart, IChartApi, SingleValueData } from 'lightweight-charts';
 
 interface ChartViewProps {
   contractAddress: string;
@@ -13,21 +13,19 @@ export function ChartView({
   timeRange,
 }: ChartViewProps) {
   const chartContainerRef = useRef<HTMLDivElement>(null);
-  const chart = useRef<IChartApi | null>(null);
+  const chartRef = useRef<IChartApi | null>(null);
 
   useEffect(() => {
     if (!chartContainerRef.current) return;
 
-    const chartOptions = {
-      layout: {
-        background: { 
-          type: 'solid', 
-          color: '#1a1a1a' 
-        },
-        textColor: '#d1d5db',
-      },
-      width: chartContainerRef.current.clientWidth,
+    const container = chartContainerRef.current;
+    const chart = createChart(container, {
+      width: container.clientWidth,
       height: 400,
+      layout: {
+        background: { type: 'solid', color: '#1a1a1a' },
+        textColor: '#d1d4dc',
+      },
       grid: {
         vertLines: { color: '#2c2c2c' },
         horzLines: { color: '#2c2c2c' },
@@ -36,24 +34,15 @@ export function ChartView({
         timeVisible: true,
         secondsVisible: false,
       },
-    };
-
-    chart.current = createChart(chartContainerRef.current, chartOptions);
-    const newSeries = chart.current.addAreaSeries({
-      lineColor: '#2962FF',
-      topColor: '#2962FF',
-      bottomColor: 'rgba(41, 98, 255, 0.28)',
-      lineWidth: 2,
-      priceLineVisible: false,
     });
 
-    const handleResize = () => {
-      if (chartContainerRef.current && chart.current) {
-        chart.current.applyOptions({ 
-          width: chartContainerRef.current.clientWidth 
-        });
-      }
-    };
+    const areaSeries = chart.addCandlestickSeries({
+      upColor: '#26a69a',
+      downColor: '#ef5350',
+      borderVisible: false,
+      wickUpColor: '#26a69a',
+      wickDownColor: '#ef5350',
+    });
 
     const fetchData = async () => {
       try {
@@ -63,23 +52,33 @@ export function ChartView({
         const response = await fetch(`/api/price-history/${contractAddress}?start=${startTime}&end=${endTime}`);
         const data = await response.json();
 
-        newSeries.setData(data.map((item: any) => ({
+        const formattedData = data.map((item: any) => ({
           time: item.time,
-          value: parseFloat(item.value)
-        })));
+          open: parseFloat(item.value),
+          high: parseFloat(item.value),
+          low: parseFloat(item.value),
+          close: parseFloat(item.value),
+        }));
+
+        areaSeries.setData(formattedData);
       } catch (error) {
         console.error('Error fetching chart data:', error);
       }
     };
 
-    fetchData();
+    const handleResize = () => {
+      chart.applyOptions({ 
+        width: container.clientWidth 
+      });
+    };
+
+    chartRef.current = chart;
     window.addEventListener('resize', handleResize);
+    fetchData();
 
     return () => {
       window.removeEventListener('resize', handleResize);
-      if (chart.current) {
-        chart.current.remove();
-      }
+      chart.remove();
     };
   }, [contractAddress]);
 
