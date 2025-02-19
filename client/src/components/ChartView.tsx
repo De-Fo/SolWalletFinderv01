@@ -1,6 +1,6 @@
-
-import { useEffect, useRef } from 'react';
-import { createChart, IChartApi, SingleValueData } from 'lightweight-charts';
+import { useEffect } from 'react';
+import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
+import { Card } from './ui/card';
 
 interface ChartViewProps {
   contractAddress: string;
@@ -11,78 +11,40 @@ interface ChartViewProps {
 export function ChartView({
   contractAddress,
   timeRange,
+  onTimeRangeChange
 }: ChartViewProps) {
-  const chartContainerRef = useRef<HTMLDivElement>(null);
-  const chartRef = useRef<IChartApi | null>(null);
-
-  useEffect(() => {
-    if (!chartContainerRef.current) return;
-
-    const container = chartContainerRef.current;
-    const chart = createChart(container, {
-      width: container.clientWidth,
-      height: 400,
-      layout: {
-        background: { type: 'solid', color: '#1a1a1a' },
-        textColor: '#d1d4dc',
-      },
-      grid: {
-        vertLines: { color: '#2c2c2c' },
-        horzLines: { color: '#2c2c2c' },
-      },
-      timeScale: {
-        timeVisible: true,
-        secondsVisible: false,
-      },
-    });
-
-    const areaSeries = chart.addCandlestickSeries({
-      upColor: '#26a69a',
-      downColor: '#ef5350',
-      borderVisible: false,
-      wickUpColor: '#26a69a',
-      wickDownColor: '#ef5350',
-    });
-
-    const fetchData = async () => {
-      try {
-        const endTime = Math.floor(Date.now() / 1000);
-        const startTime = endTime - 7 * 24 * 60 * 60; // 7 days
-
-        const response = await fetch(`/api/price-history/${contractAddress}?start=${startTime}&end=${endTime}`);
-        const data = await response.json();
-
-        const formattedData = data.map((item: any) => ({
-          time: item.time,
-          open: parseFloat(item.value),
-          high: parseFloat(item.value),
-          low: parseFloat(item.value),
-          close: parseFloat(item.value),
-        }));
-
-        areaSeries.setData(formattedData);
-      } catch (error) {
-        console.error('Error fetching chart data:', error);
-      }
-    };
-
-    const handleResize = () => {
-      chart.applyOptions({ 
-        width: container.clientWidth 
-      });
-    };
-
-    chartRef.current = chart;
-    window.addEventListener('resize', handleResize);
-    fetchData();
-
-    return () => {
-      window.removeEventListener('resize', handleResize);
-      chart.remove();
-    };
-  }, [contractAddress]);
+  // Sample data - replace with real data fetch
+  const data = [
+    { time: '2024-01-01', value: 10 },
+    { time: '2024-01-02', value: 11 },
+    { time: '2024-01-03', value: 14 },
+    { time: '2024-01-04', value: 12 },
+    { time: '2024-01-05', value: 15 },
+  ];
 
   return (
-    <div className="w-full h-[400px]" ref={chartContainerRef} />
+    <div style={{ width: '100%', height: 400 }}>
+      <ResponsiveContainer>
+        <AreaChart data={data}>
+          <defs>
+            <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="5%" stopColor="#22c55e" stopOpacity={0.3}/>
+              <stop offset="95%" stopColor="#22c55e" stopOpacity={0}/>
+            </linearGradient>
+          </defs>
+          <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+          <XAxis dataKey="time" stroke="#d1d5db" />
+          <YAxis stroke="#d1d5db" />
+          <Tooltip />
+          <Area 
+            type="monotone" 
+            dataKey="value" 
+            stroke="#22c55e" 
+            fillOpacity={1}
+            fill="url(#colorValue)" 
+          />
+        </AreaChart>
+      </ResponsiveContainer>
+    </div>
   );
 }
