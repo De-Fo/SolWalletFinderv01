@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { createChart, ColorType } from 'lightweight-charts';
+import { createChart, IChartApi } from 'lightweight-charts';
 
 interface ChartViewProps {
   contractAddress: string;
@@ -13,14 +13,14 @@ export function ChartView({
   onTimeRangeChange
 }: ChartViewProps) {
   const chartContainerRef = useRef<HTMLDivElement>(null);
-  const chartRef = useRef<any>(null);
+  const chartRef = useRef<IChartApi | null>(null);
 
   useEffect(() => {
     if (!chartContainerRef.current) return;
 
     const chart = createChart(chartContainerRef.current, {
       layout: {
-        background: { type: ColorType.Solid, color: 'transparent' },
+        background: { type: 'solid', color: 'transparent' },
         textColor: '#d1d5db',
       },
       grid: {
@@ -31,25 +31,22 @@ export function ChartView({
       height: 400,
     });
 
-    const candlestickSeries = chart.addCandlestickSeries({
-      upColor: '#22c55e',
-      downColor: '#ef4444',
-      borderVisible: false,
-      wickUpColor: '#22c55e',
-      wickDownColor: '#ef4444',
+    const lineSeries = chart.addLineSeries({
+      color: '#22c55e',
+      lineWidth: 2,
     });
 
     // Sample data - replace with real data fetch
     const data = [
-      { time: '2024-01-01', open: 10, high: 12, low: 9, close: 11 },
-      { time: '2024-01-02', open: 11, high: 15, low: 10, close: 14 },
-      // Add more data points...
+      { time: '2024-01-01', value: 10 },
+      { time: '2024-01-02', value: 11 },
+      { time: '2024-01-03', value: 14 },
+      { time: '2024-01-04', value: 12 },
+      { time: '2024-01-05', value: 15 },
     ];
 
-    candlestickSeries.setData(data);
-
+    lineSeries.setData(data);
     chart.timeScale().fitContent();
-
     chartRef.current = chart;
 
     const handleResize = () => {
@@ -68,5 +65,5 @@ export function ChartView({
     };
   }, [contractAddress]);
 
-  return <div ref={chartContainerRef} />;
+  return <div ref={chartContainerRef} className="w-full" />;
 }

@@ -7,21 +7,18 @@ import { WalletList } from "@/components/WalletList";
 import { Filters } from "@/components/Filters";
 import { useToast } from "@/hooks/use-toast";
 import { isValidSolanaAddress } from "@/lib/web3";
+import { Maximize2 } from "lucide-react";
 
 export default function Dashboard() {
   const [contractAddress, setContractAddress] = useState("");
+  const [isWalletListExpanded, setIsWalletListExpanded] = useState(false);
   const { toast } = useToast();
   const [selectedTimeRange, setSelectedTimeRange] = useState<[Date, Date]>([
     new Date(Date.now() - 24 * 60 * 60 * 1000),
     new Date()
   ]);
 
-  const handleAddressChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value.trim();
-    setContractAddress(value);
-  };
-
-  const handleSearch = () => {
+  const handleAddressSubmit = () => {
     if (!isValidSolanaAddress(contractAddress)) {
       toast({
         title: "Invalid Address",
@@ -35,57 +32,79 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen bg-background p-6">
-      <div className="max-w-7xl mx-auto space-y-6">
+      <div className="max-w-[1800px] mx-auto space-y-6">
         <Card>
           <CardContent className="pt-6">
             <div className="flex gap-4">
               <Input
                 placeholder="Enter contract address"
                 value={contractAddress}
-                onChange={handleAddressChange}
-                onPaste={(e) => {
-                  e.preventDefault();
-                  const pastedText = e.clipboardData.getData('text').trim();
-                  setContractAddress(pastedText);
-                }}
+                onChange={(e) => setContractAddress(e.target.value)}
                 className="flex-1 font-mono"
               />
-              <Button onClick={handleSearch}>Search</Button>
+              <Button onClick={handleAddressSubmit}>Search</Button>
             </div>
           </CardContent>
         </Card>
 
         {contractAddress && (
-          <>
-            <div className="grid lg:grid-cols-[300px,1fr] gap-6">
-              <Filters
-                onFiltersChange={(filters) => {
-                  console.log("Filters changed:", filters);
-                }}
-              />
+          <div className="grid gap-6" style={{ 
+            gridTemplateColumns: isWalletListExpanded ? '1fr' : '2fr 1fr',
+            transition: 'grid-template-columns 0.3s ease-in-out'
+          }}>
+            <div className="space-y-6">
+              <Card>
+                <CardContent className="pt-6">
+                  <ChartView
+                    contractAddress={contractAddress}
+                    timeRange={selectedTimeRange}
+                    onTimeRangeChange={setSelectedTimeRange}
+                  />
+                </CardContent>
+              </Card>
 
-              <div className="space-y-6">
-                <Card>
-                  <CardContent className="pt-6">
-                    <ChartView
-                      contractAddress={contractAddress}
-                      timeRange={selectedTimeRange}
-                      onTimeRangeChange={setSelectedTimeRange}
-                    />
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardContent className="pt-6">
-                    <WalletList
-                      contractAddress={contractAddress}
-                      timeRange={selectedTimeRange}
-                    />
-                  </CardContent>
-                </Card>
-              </div>
+              <Card className="lg:hidden">
+                <CardContent className="pt-6">
+                  <Filters
+                    onFiltersChange={(filters) => {
+                      console.log("Filters changed:", filters);
+                    }}
+                  />
+                </CardContent>
+              </Card>
             </div>
-          </>
+
+            <div className="space-y-6">
+              <Card>
+                <CardContent className="pt-6">
+                  <div className="flex justify-between items-center mb-4">
+                    <h2 className="text-lg font-semibold">Transaction List</h2>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => setIsWalletListExpanded(!isWalletListExpanded)}
+                    >
+                      <Maximize2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                  <WalletList
+                    contractAddress={contractAddress}
+                    timeRange={selectedTimeRange}
+                  />
+                </CardContent>
+              </Card>
+
+              <Card className="hidden lg:block">
+                <CardContent className="pt-6">
+                  <Filters
+                    onFiltersChange={(filters) => {
+                      console.log("Filters changed:", filters);
+                    }}
+                  />
+                </CardContent>
+              </Card>
+            </div>
+          </div>
         )}
       </div>
     </div>
