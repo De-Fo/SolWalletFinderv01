@@ -1,6 +1,30 @@
-node_modules
-dist
+
+# Dependencies
+node_modules/
+.npm
+
+# Build outputs
+dist/
+build/
+
+# Environment
+.env
+.env.*
+!.env.example
+
+# IDE
+.vscode/
+.idea/
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+
+# Cache
+.cache/
+.eslintcache
 .DS_Store
-server/public
-vite.config.ts.*
-*.tar.gz
+
+# Drizzle
+migrations/.snapshot/
